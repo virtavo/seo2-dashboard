@@ -1,0 +1,1176 @@
+<!--
+  ======================================================
+  WARNING — SOFT LOCK（客户端密码门，非强加密鉴权）
+  ======================================================
+  本页面使用纯 JavaScript 密码门作为轻量访问控制。
+  密码明文保存在本文件 JS 常量中，查看源码即可绕过。
+  适用场景：挡住普通访客 + 配合 <meta noindex> 防止搜索引擎收录。
+  如需强访问控制（不可绕过），请在本文件前面叠加服务端鉴权，
+  例如：Cloudflare Access（免费套餐支持）、Nginx Basic Auth 或 GitHub Pages 的 OAuth App。
+  ======================================================
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>SEO 优化看板 — ShowMo365</title>
+  <!--
+    ======================================================
+    SEO 公开看板 — dashboard/seo-public/index.html
+    版本：1.1（2026-06-18）— 新增轻量 JS 密码门
+    用途：专供 seo2.foreverdoodle.com 公网子域部署
+    执行角色：dashboard agent
+
+    重要：本文件仅含 SEO 概览内容，完全不含任何 KOL 数据。
+    不引用、不加载 kol-data.js。
+
+    数据来源（均来自真实文件，无虚构数据）：
+    - coordination/board.md（任务进度）
+    - coordination/reports/seo-tech/T001-homepage-audit.md（技术体检）
+    - coordination/reviews/T001.md（审查结论）
+    - coordination/reports/advisor/T001-给Roger的行动建议.md（行动建议）
+
+    后续接入 T004 数据说明：
+    - T004 脚本采集后会输出 JSON 到 reports/seo-monitor/data/
+    - 本页面预留了占位区，接入时替换对应 innerHTML 即可
+    ======================================================
+  -->
+  <style>
+    /* ---- Reset & 基础 ---- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ---- 顶部导航栏 ---- */
+    .topbar {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .topbar-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .topbar-subtitle {
+      font-size: 13px;
+      color: #a0aec0;
+    }
+    .topbar-badge {
+      background: #2d6a4f;
+      color: #d8f3dc;
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ---- 主体布局 ---- */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    /* ---- 区块标题 ---- */
+    .section-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title .icon {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .section { margin-bottom: 36px; }
+
+    /* ---- 概览卡片 ---- */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 0;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    .card-label {
+      font-size: 12px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+    .card-value {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .card-sub {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 6px;
+    }
+    .card.red    .card-value { color: #c53030; }
+    .card.amber  .card-value { color: #b7791f; }
+    .card.green  .card-value { color: #276749; }
+    .card.blue   .card-value { color: #2b6cb0; }
+    .card.purple .card-value { color: #6b46c1; }
+
+    /* ---- 任务看板 ---- */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .task-row {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .task-id {
+      font-size: 12px;
+      font-weight: 700;
+      background: #edf2f7;
+      color: #4a5568;
+      padding: 2px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .task-owner {
+      font-size: 12px;
+      color: #805ad5;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .task-desc {
+      flex: 1;
+      font-size: 14px;
+      color: #2d3748;
+    }
+    .task-desc small {
+      display: block;
+      font-size: 12px;
+      color: #718096;
+      margin-top: 3px;
+    }
+    .status-badge {
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .status-approved      { background: #c6f6d5; color: #22543d; }
+    .status-pending-review { background: #fefcbf; color: #744210; }
+    .status-in-progress  { background: #bee3f8; color: #2a4365; }
+    .status-todo         { background: #e2e8f0; color: #4a5568; }
+    .status-owner-confirm { background: #e9d8fd; color: #44337a; }
+    .status-executed    { background: #9ae6b4; color: #1a4731; }
+
+    /* ---- 问题表格 ---- */
+    .table-wrap {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+    thead th {
+      background: #f7fafc;
+      color: #4a5568;
+      font-weight: 700;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid #e2e8f0;
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #f7fafc; }
+
+    .severity {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .sev-high    { background: #fed7d7; color: #c53030; }
+    .sev-mid     { background: #fef3c7; color: #92400e; }
+    .sev-low     { background: #e9d8fd; color: #553c9a; }
+    .sev-confirm { background: #e2e8f0; color: #4a5568; }
+
+    .gating-yes { color: #c53030; font-weight: 600; }
+    .gating-confirm { color: #b7791f; font-weight: 600; }
+
+    /* ---- 行动建议 ---- */
+    .advice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .advice-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      border-left: 4px solid #e2e8f0;
+    }
+    .advice-card.prio-now    { border-left-color: #e53e3e; }
+    .advice-card.prio-wait   { border-left-color: #ed8936; }
+    .advice-card.prio-low    { border-left-color: #9f7aea; }
+    .advice-card.prio-confirm { border-left-color: #4299e1; }
+    .advice-id {
+      font-size: 11px;
+      font-weight: 700;
+      color: #718096;
+      margin-bottom: 4px;
+    }
+    .advice-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+    .advice-desc {
+      font-size: 13px;
+      color: #4a5568;
+      line-height: 1.55;
+    }
+    .advice-prio {
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .prio-now    .advice-prio { color: #c53030; }
+    .prio-wait   .advice-prio { color: #c05621; }
+    .prio-low    .advice-prio { color: #6b46c1; }
+    .prio-confirm .advice-prio { color: #2b6cb0; }
+
+    /* ---- 占位区 ---- */
+    .placeholder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .placeholder-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 22px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      border: 2px dashed #cbd5e0;
+      text-align: center;
+    }
+    .placeholder-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+    .placeholder-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+    .placeholder-tag {
+      display: inline-block;
+      background: #e2e8f0;
+      color: #718096;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      margin-bottom: 10px;
+    }
+    .placeholder-desc {
+      font-size: 12.5px;
+      color: #718096;
+      line-height: 1.55;
+    }
+
+    /* ---- 审查状态 ---- */
+    .review-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .review-verdict {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .verdict-approved { background: #c6f6d5; color: #22543d; }
+    .review-info { flex: 1; }
+    .review-title { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+    .review-meta  { font-size: 12px; color: #718096; margin-top: 3px; }
+
+    /* ---- 页脚 ---- */
+    footer {
+      background: #1a1a2e;
+      color: #a0aec0;
+      font-size: 12px;
+      padding: 24px 16px;
+      text-align: center;
+      line-height: 2;
+    }
+    footer a { color: #63b3ed; text-decoration: none; }
+    footer .isolation-notice {
+      display: inline-block;
+      margin-top: 8px;
+      background: #2d3748;
+      color: #68d391;
+      padding: 5px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    /* ---- 响应式 ---- */
+    @media (max-width: 640px) {
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .overview-grid { grid-template-columns: 1fr 1fr; }
+      .task-row { gap: 8px; }
+    }
+
+    /* ---- 密码门遮罩 ---- */
+    #gate-overlay {
+      position: fixed;
+      inset: 0;
+      background: #1a1a2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #gate-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.35);
+      text-align: center;
+    }
+    #gate-logo {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+    #gate-sub {
+      font-size: 13px;
+      color: #718096;
+      margin-bottom: 28px;
+    }
+    #gate-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    #gate-input {
+      width: 100%;
+      padding: 11px 14px;
+      font-size: 15px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color .2s;
+      font-family: inherit;
+      letter-spacing: 1px;
+    }
+    #gate-input:focus { border-color: #667eea; }
+    #gate-input.error { border-color: #e53e3e; animation: shake .3s; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+    #gate-btn {
+      margin-top: 16px;
+      width: 100%;
+      padding: 12px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .2s;
+    }
+    #gate-btn:hover { background: #2d3748; }
+    #gate-error {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #e53e3e;
+      font-weight: 600;
+      min-height: 20px;
+    }
+    #gate-hint {
+      margin-top: 18px;
+      font-size: 11px;
+      color: #a0aec0;
+      line-height: 1.6;
+    }
+    /* 内容区初始隐藏，解锁后显示 */
+    #main-content { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- ==================== 密码门 ==================== -->
+<!--
+  SOFT LOCK：密码明文写在下方 JS 常量 GATE_PASSWORD 中。
+  修改密码：找到 const GATE_PASSWORD = '...' 那一行，改引号内的值即可。
+-->
+<div id="gate-overlay" role="dialog" aria-modal="true" aria-label="访问验证">
+  <div id="gate-box">
+    <div id="gate-logo">ShowMo365 SEO 看板</div>
+    <div id="gate-sub">内部数据，请输入访问密码</div>
+    <label id="gate-label" for="gate-input">访问密码</label>
+    <input
+      id="gate-input"
+      type="password"
+      placeholder="请输入访问密码"
+      autocomplete="current-password"
+      spellcheck="false"
+    />
+    <button id="gate-btn" type="button">进入看板</button>
+    <div id="gate-error" aria-live="polite"></div>
+    <div id="gate-hint">
+      仅限授权人员访问 &nbsp;|&nbsp; noindex 已启用，不被搜索引擎收录<br>
+      <em>本页为 soft lock，强访问控制请叠加 Cloudflare Access</em>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ======================================================
+  // 访问密码常量 — 修改密码只需改这一行的值
+  // 注意：这是 soft lock，密码可通过查看源码绕过。
+  //       如需强鉴权，请在前面叠加 Cloudflare Access 等服务端方案。
+  // ======================================================
+  const GATE_PASSWORD = 'ShowMo-SEO-2026';
+
+  (function () {
+    var overlay = document.getElementById('gate-overlay');
+    var input   = document.getElementById('gate-input');
+    var btn     = document.getElementById('gate-btn');
+    var errEl   = document.getElementById('gate-error');
+    var content = document.getElementById('main-content');
+
+    // 支持 Enter 键提交
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { attempt(); }
+    });
+    btn.addEventListener('click', attempt);
+
+    // 自动聚焦输入框
+    setTimeout(function () { input.focus(); }, 80);
+
+    function attempt() {
+      var val = input.value;
+      if (val === GATE_PASSWORD) {
+        // 密码正确：隐藏遮罩，显示内容
+        overlay.style.display = 'none';
+        content.style.display = '';
+        input.value = '';
+      } else {
+        // 密码错误：抖动 + 提示
+        errEl.textContent = '密码不正确，请重新输入';
+        input.classList.remove('error');
+        // 强制重绘以触发动画
+        void input.offsetWidth;
+        input.classList.add('error');
+        input.select();
+        setTimeout(function () {
+          input.classList.remove('error');
+        }, 350);
+      }
+    }
+  })();
+</script>
+
+<!-- ==================== 看板主体（密码验证通过后显示） ==================== -->
+<div id="main-content">
+
+<!-- ==================== 顶部导航栏 ==================== -->
+<header class="topbar">
+  <div>
+    <div class="topbar-title">ShowMo365 SEO 看板</div>
+    <div class="topbar-subtitle">
+      SEO 优化概览 &nbsp;|&nbsp;
+      网站：<strong style="color:#fff">www.showmo365.com</strong>
+      &nbsp;|&nbsp; 数据更新：2026-06-18
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span class="topbar-badge">T001 体检 已批准</span>
+    <span style="font-size:12px;color:#718096">本看板独立运行，不接触 WordPress</span>
+  </div>
+</header>
+
+<!-- ==================== SEO 概览 ==================== -->
+<main class="container">
+
+  <!-- ==================== 一、概览卡片 ==================== -->
+  <!--
+    数据来源：coordination/board.md（任务计数）
+              coordination/reports/seo-tech/T001-homepage-audit.md（问题计数）
+  -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon" style="background:#dbeafe">&#128202;</span>
+      整体概览
+    </h2>
+    <div class="overview-grid">
+
+      <div class="card blue">
+        <div class="card-label">总任务数</div>
+        <div class="card-value">8</div>
+        <div class="card-sub">T001~T008，涵盖技术/内容/竞品/监控/看板/备份/KOL</div>
+      </div>
+
+      <div class="card green">
+        <div class="card-label">已批准完成</div>
+        <div class="card-value">2</div>
+        <div class="card-sub">T001 技术体检、T007 KOL看板（qa-reviewer 已批准）</div>
+      </div>
+
+      <div class="card amber">
+        <div class="card-label">待站长确认</div>
+        <div class="card-value">2</div>
+        <div class="card-sub">T006 备份方案、T008 KOL建联（qa APPROVED，等 Roger 确认）</div>
+      </div>
+
+      <div class="card purple">
+        <div class="card-label">待审</div>
+        <div class="card-value">1</div>
+        <div class="card-sub">T005 看板MVP（qa-reviewer 审查中）</div>
+      </div>
+
+      <div class="card" style="background:#bee3f8;border-left:4px solid #3182ce;">
+        <div class="card-label" style="color:#2a4365">进行中</div>
+        <div class="card-value" style="color:#2a4365">1</div>
+        <div class="card-sub">T004 采集脚本（qa 打回整改中）</div>
+      </div>
+
+      <div class="card" style="background:#fff;border-left:4px solid #cbd5e0;">
+        <div class="card-label" style="color:#718096">待办（未启动）</div>
+        <div class="card-value" style="color:#4a5568">2</div>
+        <div class="card-sub">T002 内容优化、T003 竞品分析</div>
+      </div>
+
+      <div class="card red">
+        <div class="card-label">T001 高优先级问题</div>
+        <div class="card-value">3</div>
+        <div class="card-sub">H1重复 / og:image缺失 / 图片无懒加载</div>
+      </div>
+
+      <div class="card amber">
+        <div class="card-label">T001 中优先级问题</div>
+        <div class="card-value">5</div>
+        <div class="card-sub">Title格式 / Twitter Card / 无页面缓存 / 阻塞脚本 / 双规范URL</div>
+      </div>
+
+      <div class="card purple">
+        <div class="card-label">T001 低优先级问题</div>
+        <div class="card-value">3</div>
+        <div class="card-sub">示例页在sitemap / Schema描述空 / 品牌别名堆叠</div>
+      </div>
+
+      <div class="card green">
+        <div class="card-label">T001 需后台确认</div>
+        <div class="card-value">1</div>
+        <div class="card-sub">WP核心版本（公开页无法确认，需后台查看）</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 二、任务进度 ==================== -->
+  <!--
+    数据来源：coordination/board.md
+    颜色说明：绿=已批准、黄=待审、蓝=进行中、灰=待办
+  -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon" style="background:#d1fae5">&#9989;</span>
+      任务进度
+    </h2>
+
+    <div style="font-size:12px;color:#718096;margin-bottom:12px">
+      来源文件：coordination/board.md &nbsp;|&nbsp;
+      颜色：
+      <span class="status-badge status-approved">已批准</span>
+      <span class="status-badge status-owner-confirm">待站长确认</span>
+      <span class="status-badge status-pending-review">待审</span>
+      <span class="status-badge status-in-progress">进行中</span>
+      <span class="status-badge status-todo">待办</span>
+    </div>
+
+    <div class="task-list">
+
+      <div class="task-row">
+        <span class="task-id">T001</span>
+        <span class="task-owner">@seo-tech</span>
+        <div class="task-desc">
+          WordPress 首页技术SEO审计（含插件现状）
+          <small>目标 https://www.showmo365.com — 已历经 qa-reviewer 打回整改、v2 复审 APPROVED 全流程闭环</small>
+        </div>
+        <span class="status-badge status-approved">已批准</span>
+      </div>
+
+      <div class="task-row">
+        <span class="task-id">T002</span>
+        <span class="task-owner">@seo-content</span>
+        <div class="task-desc">
+          选 5 个核心页面做关键词与标题描述优化
+          <small>阻塞前置项：T001 体检已批准，但 T006 备份未执行，改站动作需等备份完成</small>
+        </div>
+        <span class="status-badge status-todo">待办</span>
+      </div>
+
+      <div class="task-row">
+        <span class="task-id">T003</span>
+        <span class="task-owner">@seo-competitor</span>
+        <div class="task-desc">
+          选 3 个竞品做关键词差距分析
+          <small>只读公开信息，不需备份前置，可独立启动</small>
+        </div>
+        <span class="status-badge status-todo">待办</span>
+      </div>
+
+      <div class="task-row">
+        <span class="task-id">T004</span>
+        <span class="task-owner">@seo-monitor</span>
+        <div class="task-desc">
+          搭建排名/收录/性能采集脚本（可 cron）
+          <small>GSC+GA4 只读API接入方案已出，qa-reviewer 打回（见 reviews/T004.md，.gitignore 补充整改中），整改后重提审</small>
+        </div>
+        <span class="status-badge status-in-progress">进行中</span>
+      </div>
+
+      <div class="task-row">
+        <span class="task-id">T005</span>
+        <span class="task-owner">@dashboard</span>
+        <div class="task-desc">
+          独立看板最小可用版本（纯静态，不碰 WordPress）
+          <small>Roger 主动要求 — 已提交，等待 qa-reviewer 审查（按 reviews/T005.md 整改后重提审）</small>
+        </div>
+        <span class="status-badge status-pending-review">待审</span>
+      </div>
+
+      <div class="task-row">
+        <span class="task-id">T006</span>
+        <span class="task-owner">@devops</span>
+        <div class="task-desc">
+          完整备份 + 配置每周自动备份（红线前置项，所有改站动作的前提）
+          <small>qa-reviewer APPROVED（见 reviews/T006.md）→ 等待 advisor 向 Roger 说明 + Roger 确认 + 凭据到位后执行</small>
+        </div>
+        <span class="status-badge status-owner-confirm">待站长确认</span>
+      </div>
+
+      <div class="task-row">
+        <span class="task-id">T007</span>
+        <span class="task-owner">@dashboard</span>
+        <div class="task-desc">
+          在现有看板新增「KOL 建联」标签页
+          <small>Roger 主动要求 — 数据源 reports/kol/03-tracker.csv，纯静态，qa-reviewer APPROVED（见 reviews/T007.md）</small>
+        </div>
+        <span class="status-badge status-approved">已批准</span>
+      </div>
+
+      <div class="task-row">
+        <span class="task-id">T008</span>
+        <span class="task-owner">@advisor</span>
+        <div class="task-desc">
+          海外 KOL 找人+建联（北美/欧洲，IG/YT/TikTok）
+          <small>策略SOP+候选名单+首批核实+定制邮件+追踪表已完成；实际发送需 Roger 确认发件邮箱+首批名单+送样/佣金预算</small>
+        </div>
+        <span class="status-badge status-owner-confirm">待站长确认</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== 三、技术体检结果 ==================== -->
+  <!--
+    数据来源：coordination/reports/seo-tech/T001-homepage-audit.md（关键发现汇总表）
+    说明：所有问题均已通过 qa-reviewer 复核验证（reviews/T001.md APPROVED）
+    "需改站走门禁"含义：这些修改必须先经 qa-reviewer 审查 + advisor 向 Roger 说明 + Roger 确认 + devops 执行，缺一不可
+  -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon" style="background:#fee2e2">&#128269;</span>
+      T001 首页技术体检结果（共 12 项发现）
+    </h2>
+
+    <div style="font-size:12px;color:#718096;margin-bottom:12px">
+      来源：coordination/reports/seo-tech/T001-homepage-audit.md（v2，qa-reviewer 已批准）&nbsp;|&nbsp;
+      审查：coordination/reviews/T001.md（VERDICT: APPROVED，2026-06-18）<br>
+      <strong style="color:#c53030">注意：</strong>
+      "需改站走门禁"表示该修改必须经 advisor 向 Roger 说明并获确认后，由 devops 执行，不可自行操作。
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>问题描述</th>
+            <th>严重度</th>
+            <th>关键证据</th>
+            <th>建议动作</th>
+            <th>需改站走门禁</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>H1 标签出现 3 次（每页应只有 1 个）<br><small style="color:#718096">谷歌规定每页只有一个最重要的大标题。现在三个"大标题"让谷歌搞不清首页重点</small></td>
+            <td><span class="severity sev-high">高</span></td>
+            <td style="font-size:12px">H1[1]=ShowMo, H1[2]=Up to One Mile Wi-Fi Connectivity, H1[3]=WinEye</td>
+            <td style="font-size:12px">改主题模板代码（子主题），保留一个核心 H1</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>og:image 完全缺失<br><small style="color:#718096">分享到微信/脸书/领英时无预览图，点击率明显降低</small></td>
+            <td><span class="severity sev-high">高</span></td>
+            <td style="font-size:12px">抓取首页无任何 og:image meta 标签</td>
+            <td style="font-size:12px">Yoast 后台「社交→Facebook」上传品牌图</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>34 张图片均无 loading=lazy<br><small style="color:#718096">一打开页面 34 张图同时下载，手机访问明显变慢</small></td>
+            <td><span class="severity sev-high">高</span></td>
+            <td style="font-size:12px">loading="lazy" 出现次数=0；图片共 34 张</td>
+            <td style="font-size:12px">安装图片优化插件（如 EWWW Image Optimizer）或改主题代码</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Title 格式含品牌冗余，关键词靠后<br><small style="color:#718096">搜索结果蓝色标题未出现产品词，谷歌不知道你卖什么</small></td>
+            <td><span class="severity sev-mid">中</span></td>
+            <td style="font-size:12px">当前："Home - ShowMo - showmo365"（25字符）</td>
+            <td style="font-size:12px">Yoast 后台改首页 SEO 标题，前置产品词（需 Roger 先确认关键词方向）</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Twitter Card 不完整（仅有卡片类型，缺 title/description/image）<br><small style="color:#718096">订了豪华相框但里面什么都没放</small></td>
+            <td><span class="severity sev-mid">中</span></td>
+            <td style="font-size:12px">仅见 twitter:card: summary_large_image，其余字段缺失</td>
+            <td style="font-size:12px">Yoast 后台「社交→Twitter」填写内容</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>首页无页面缓存（Cache-Control: no-cache）<br><small style="color:#718096">每次访问服务器都重新生成页面，流量高峰时变慢</small></td>
+            <td><span class="severity sev-mid">中</span></td>
+            <td style="font-size:12px">响应头：cache-control: no-cache, must-revalidate, max-age=0；未检测到缓存插件指纹</td>
+            <td style="font-size:12px">安装 LiteSpeed Cache 或 W3 Total Cache（先确认是否已装）</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>&lt;head&gt; 内 2 个同步阻塞脚本（无 defer/async）<br><small style="color:#718096">进门先等收银机开机再营业，拖慢首屏速度</small></td>
+            <td><span class="severity sev-mid">中</span></td>
+            <td style="font-size:12px">jQuery（ver=3.7.1）和 jQuery-migrate（ver=3.4.1）在 head 无 defer/async</td>
+            <td style="font-size:12px">改主题/插件代码加 defer 属性（需测试验证功能完整性）</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>sitemap 中含 /sample-page/（WordPress 默认示例页）<br><small style="color:#718096">谷歌会白跑一趟爬这个无用页面</small></td>
+            <td><span class="severity sev-low">低</span></td>
+            <td style="font-size:12px">page-sitemap.xml 中发现 /sample-page/</td>
+            <td style="font-size:12px">Yoast 后台将该页设为 noindex 或从 sitemap 排除</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>双规范 URL 风险：https://showmo365.com/ 可独立访问<br><small style="color:#718096">两个地址都能打开，谷歌可能重复计算（canonical 已提供软规范，风险较低）</small></td>
+            <td><span class="severity sev-mid">中</span></td>
+            <td style="font-size:12px">实测（qa 复审确认）：https://showmo365.com/ 经 WordPress 层 301 跳 www，canonical 指向 www 版，风险低于 v2 原评估</td>
+            <td style="font-size:12px">服务器层（.htaccess）加 301 非www跳www（高风险操作，必须备份先行）</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>WebSite Schema description 字段为空字符串<br><small style="color:#718096">递名片但背面空白，谷歌读不到网站自我介绍</small></td>
+            <td><span class="severity sev-low">低</span></td>
+            <td style="font-size:12px">JSON-LD 中 "@type":"WebSite","description":""</td>
+            <td style="font-size:12px">Yoast 后台「常规」填写网站描述</td>
+            <td class="gating-yes">是</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>WP 核心版本无法从公开页面确认<br><small style="color:#718096">版本过旧可能有安全漏洞，需后台查看实际版本</small></td>
+            <td><span class="severity sev-confirm">需确认</span></td>
+            <td style="font-size:12px">资源 URL 中多个 ?ver= 参数均为各组件版本，不能推断 WP 核心版本</td>
+            <td style="font-size:12px">devops 执行 wp core version（只读命令）确认版本</td>
+            <td class="gating-confirm">仅只读确认</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Schema alternateName 含多品牌变体堆叠<br><small style="color:#718096">Organization 含四个变体，存在轻微关键词堆叠风险</small></td>
+            <td><span class="severity sev-low">低</span></td>
+            <td style="font-size:12px">Organization.alternateName="ShowMo showmo showmo365 ShowMo365"</td>
+            <td style="font-size:12px">Yoast 后台精简，仅保留 1~2 个真实品牌名（需 Roger 确认哪些是官方别名）</td>
+            <td class="gating-yes">是</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================== 四、行动建议摘要 ==================== -->
+  <!--
+    数据来源：coordination/reports/advisor/T001-给Roger的行动建议.md
+    颜色：红=现在做、橙=等后再做、紫=低优先级、蓝=只读确认
+  -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon" style="background:#e0e7ff">&#128161;</span>
+      给 Roger 的行动建议（advisor 整理）
+    </h2>
+
+    <div style="font-size:12px;color:#718096;margin-bottom:14px">
+      来源：coordination/reports/advisor/T001-给Roger的行动建议.md &nbsp;|&nbsp;
+      <strong>所有改动线上的操作流程：</strong>确认有完整备份 → Roger 点头 → qa-reviewer 审查具体方案 → devops 执行
+    </div>
+
+    <div class="advice-grid">
+
+      <div class="advice-card prio-now">
+        <div class="advice-id">A1 · 高优先级</div>
+        <div class="advice-title">修复首页三个"大标题"</div>
+        <div class="advice-desc">谷歌规定每页只能有一个最重要的大标题。现在有三个，导致权重被分散。需改主题模板代码（中等风险），改前必须备份。</div>
+        <div class="advice-prio">建议：现在做（最高优先级）</div>
+      </div>
+
+      <div class="advice-card prio-now">
+        <div class="advice-id">A2 · 高优先级 · 最容易</div>
+        <div class="advice-title">设置社交分享图片（og:image）</div>
+        <div class="advice-desc">分享到微信/脸书时显示图片，点击率立竿见影。只需在 Yoast 后台点几下上传图片，不碰代码，风险极低。</div>
+        <div class="advice-prio">建议：现在做（最容易的一项）</div>
+      </div>
+
+      <div class="advice-card prio-now">
+        <div class="advice-id">A3 · 高优先级</div>
+        <div class="advice-title">开启图片懒加载</div>
+        <div class="advice-desc">34 张图片一次性全部加载导致网页变慢，手机用户影响更大。可安装图片优化插件一键开启（低风险），或改主题代码（中等风险）。改前必须备份。</div>
+        <div class="advice-prio">建议：现在做（最高优先级）</div>
+      </div>
+
+      <div class="advice-card prio-now">
+        <div class="advice-id">A6 · 高优先级</div>
+        <div class="advice-title">安装页面缓存插件</div>
+        <div class="advice-desc">服务器现在每次都重新生成页面，流量大时会变慢。安装 LiteSpeed Cache 即可大幅提速。安装前需先确认是否已有缓存插件（B2 项），避免重复安装。</div>
+        <div class="advice-prio">建议：与 A3 一起处理</div>
+      </div>
+
+      <div class="advice-card prio-confirm">
+        <div class="advice-id">B1 · 只读确认</div>
+        <div class="advice-title">查清 WordPress 版本</div>
+        <div class="advice-desc">devops 用一行只读命令查看 WP 版本，不改任何内容。版本过旧会有安全漏洞，必须先确认再决定是否升级。</div>
+        <div class="advice-prio">建议：现在确认（不需备份）</div>
+      </div>
+
+      <div class="advice-card prio-confirm">
+        <div class="advice-id">B2 · 只读确认</div>
+        <div class="advice-title">确认是否已装缓存/图片优化插件</div>
+        <div class="advice-desc">避免重复安装同类插件导致冲突。devops 查看已安装插件列表，10 分钟内完成，是 A3 和 A6 的决策前提。</div>
+        <div class="advice-prio">建议：现在确认（和 A3/A6 一起决策）</div>
+      </div>
+
+      <div class="advice-card prio-wait">
+        <div class="advice-id">A4 · 中等优先级</div>
+        <div class="advice-title">优化首页 Title 关键词</div>
+        <div class="advice-desc">首页标题没有产品词，谷歌不知道你卖什么。需 Roger 先确认核心关键词方向（主打哪个产品词），确认后 devops 在 Yoast 后台改一行，风险极低。</div>
+        <div class="advice-prio">建议：等 Roger 确认关键词方向后再做</div>
+      </div>
+
+      <div class="advice-card prio-wait">
+        <div class="advice-id">T006 · 前置红线 · 待站长确认</div>
+        <div class="advice-title">完整备份 + 每周自动备份（Roger 已要求）</div>
+        <div class="advice-desc">Roger 已确认当前无备份。devops 备份方案（T006）已出并通过 qa-reviewer 审查（APPROVED）。当前阶段：等 advisor 向 Roger 说明 + Roger 确认 + 凭据到位后由 devops 执行。所有改站操作都需要等这一步完成。</div>
+        <div class="advice-prio">建议：最优先完成（所有改站动作的前提）</div>
+      </div>
+
+    </div>
+
+    <!-- 5个待Roger拍板的问题 -->
+    <div style="margin-top:20px;background:#fffbeb;border:1px solid #fbd38d;border-radius:10px;padding:16px 20px">
+      <div style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:10px">Roger 待拍板的 5 个问题（advisor 等待确认）</div>
+      <ol style="padding-left:18px;font-size:13px;color:#4a5568;line-height:2">
+        <li><strong>最重要：</strong>首页核心关键词方向想打哪个？（"wireless security camera" / "long range WiFi camera" / 其他？）</li>
+        <li>现在有没有网站备份？上次备份是什么时候？（已知：Roger 回复当前无备份）</li>
+        <li>品牌名有几个官方叫法？ShowMo / showmo / showmo365 / ShowMo365 哪些是正式名称？</li>
+        <li>要不要安装缓存插件？（推荐免费的 LiteSpeed Cache，能明显提速）</li>
+        <li>可以让 devops 只读查看 WordPress 后台吗？（不改任何内容，只查版本和插件列表）</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ==================== 五、审查结论 ==================== -->
+  <!--
+    数据来源：coordination/reviews/T001.md
+  -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon" style="background:#d1fae5">&#128274;</span>
+      审查记录
+    </h2>
+
+    <div class="task-list">
+      <div class="review-card">
+        <span class="review-verdict verdict-approved">APPROVED</span>
+        <div class="review-info">
+          <div class="review-title">T001 首页技术SEO审计（v2）</div>
+          <div class="review-meta">
+            审查官：qa-reviewer &nbsp;|&nbsp; 复审日期：2026-06-18 &nbsp;|&nbsp;
+            说明：v1 被打回（4 项整改），v2 全部整改落实，APPROVED。
+            实测重定向链路确认 WordPress 层 301 真实存在，双规范 URL 风险低于 v2 原评估。
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card" style="border:1px solid #d6bcfa">
+        <span class="review-verdict" style="background:#e9d8fd;color:#44337a">待站长确认</span>
+        <div class="review-info">
+          <div class="review-title">T006 完整备份方案</div>
+          <div class="review-meta">
+            qa-reviewer APPROVED（见 reviews/T006.md，2026-06-18）→ 流程已推进至：等待 advisor 向 Roger 说明 + Roger 确认 + 凭据到位后，由 devops 执行
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card" style="border:1px dashed #cbd5e0">
+        <span class="review-verdict" style="background:#fefcbf;color:#744210">待审</span>
+        <div class="review-info">
+          <div class="review-title">T005 看板MVP（本页面相关）</div>
+          <div class="review-meta">
+            dashboard agent 按 reviews/T005.md 整改完成，重提审 qa-reviewer（2026-06-18）
+          </div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <span class="review-verdict verdict-approved">APPROVED</span>
+        <div class="review-info">
+          <div class="review-title">T007 KOL建联标签页（内部工具，独立看板）</div>
+          <div class="review-meta">
+            审查官：qa-reviewer &nbsp;|&nbsp; 审查日期：2026-06-18 &nbsp;|&nbsp;
+            说明：数据与 reports/kol/03-tracker.csv 逐行一致，无编造数字，纯静态无外部依赖，APPROVED。本 SEO 公开版不含该页内容。
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 六、占位区（T004 接入后自动填充） ==================== -->
+  <!--
+    这些卡片目前为占位状态，不含任何虚构数据。
+    T004（@seo-monitor）完成后，数据将输出到 reports/seo-monitor/data/latest.json。
+
+    后续接入方式（供 T004 开发参考）：
+    每个占位卡片有唯一 id，T004 完成后在本目录新建 dashboard.js 中：
+
+    1. 关键词排名：
+       fetch('../../coordination/reports/seo-monitor/data/keywords.json')
+       .then(r=>r.json()).then(data => {
+         document.getElementById('ph-keywords').innerHTML = renderKeywordsTable(data);
+       })
+
+    2. 收录状态：
+       fetch('../../coordination/reports/seo-monitor/data/indexing.json')
+       .then(r=>r.json()).then(data => {
+         document.getElementById('ph-indexing').innerHTML = renderIndexingCard(data);
+       })
+
+    3. Core Web Vitals：
+       fetch('../../coordination/reports/seo-monitor/data/cwv.json')
+       .then(r=>r.json()).then(data => {
+         document.getElementById('ph-cwv').innerHTML = renderCWVCard(data);
+       })
+
+    4. 竞品对比：
+       fetch('../../coordination/reports/seo-monitor/data/competitors.json')
+       .then(r=>r.json()).then(data => {
+         document.getElementById('ph-competitors').innerHTML = renderCompetitorTable(data);
+       })
+
+    JSON 字段格式由 T004 与 dashboard 协商后定义，目前无数据。
+  -->
+  <section class="section">
+    <h2 class="section-title">
+      <span class="icon" style="background:#e0e7ff">&#128200;</span>
+      数据监控（待接入 T004 采集脚本）
+    </h2>
+
+    <div style="font-size:12px;color:#718096;margin-bottom:14px">
+      以下区域当前无真实数据。T004（@seo-monitor 采集脚本）上线后自动填充，不会显示任何虚构数字。
+    </div>
+
+    <div class="placeholder-grid">
+
+      <div class="placeholder-card" id="ph-keywords">
+        <div class="placeholder-icon">&#128293;</div>
+        <div class="placeholder-title">关键词排名趋势</div>
+        <div class="placeholder-tag">待接入 T004</div>
+        <div class="placeholder-desc">
+          上线后将显示：核心关键词当前排名、近 30 天排名变化趋势折线图、
+          排名前 10 的关键词列表（含搜索量、排名变动箭头）。
+          <br><br>
+          <em>注：Roger 尚未确认目标关键词方向（advisor 问题 1 待回复）</em>
+        </div>
+      </div>
+
+      <div class="placeholder-card" id="ph-indexing">
+        <div class="placeholder-icon">&#128196;</div>
+        <div class="placeholder-title">收录状态</div>
+        <div class="placeholder-tag">待接入 T004</div>
+        <div class="placeholder-desc">
+          上线后将显示：谷歌已收录页面数、sitemap 提交页面数、
+          未收录比例、收录趋势图、典型未收录 URL 列表。
+          <br><br>
+          <em>数据来源：Google Search Console API（需授权）</em>
+        </div>
+      </div>
+
+      <div class="placeholder-card" id="ph-cwv">
+        <div class="placeholder-icon">&#9889;</div>
+        <div class="placeholder-title">页面速度 / Core Web Vitals</div>
+        <div class="placeholder-tag">待接入 T004</div>
+        <div class="placeholder-desc">
+          上线后将显示：LCP（最大内容渲染时间）、CLS（布局偏移）、INP（交互响应），
+          用红/黄/绿三色标注是否达标，并附通俗解释。
+          <br><br>
+          目前 T001 静态观察线索：HTML 258 KB（偏大）、34 张图无懒加载、2 个阻塞脚本、无页面缓存。
+          <em>精确数值需通过 PageSpeed Insights API 实测。</em>
+        </div>
+      </div>
+
+      <div class="placeholder-card" id="ph-competitors">
+        <div class="placeholder-icon">&#128202;</div>
+        <div class="placeholder-title">竞品对比</div>
+        <div class="placeholder-tag">待接入 T003 + T004</div>
+        <div class="placeholder-desc">
+          上线后将显示：3 个竞品在同一关键词下的排名对比、
+          竞品关键词差距分析（哪些词竞品有我们没有）、
+          竞品技术 SEO 指标横向对比表。
+          <br><br>
+          <em>T003（@seo-competitor）尚未启动</em>
+        </div>
+      </div>
+
+      <div class="placeholder-card" id="ph-content">
+        <div class="placeholder-icon">&#128221;</div>
+        <div class="placeholder-title">内容优化进度</div>
+        <div class="placeholder-tag">待接入 T002</div>
+        <div class="placeholder-desc">
+          上线后将显示：5 个核心页面的关键词覆盖率、
+          标题/描述优化前后对比、内容更新计划完成进度。
+          <br><br>
+          <em>T002（@seo-content）待 T006 备份完成后启动</em>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ==================== 页脚 ==================== -->
+<!--
+  数据更新时间：使用 board.md 和 T001 审计报告中出现的 2026-06-18，
+  不使用 JS 动态时间函数，避免显示错误时间
+-->
+<footer>
+  <div>
+    <strong style="color:#e2e8f0">SEO 优化看板 — www.showmo365.com</strong>
+  </div>
+  <div>
+    数据更新时间：2026-06-18 &nbsp;|&nbsp;
+    数据来源：coordination/board.md、reports/seo-tech/T001-homepage-audit.md（v2）、reviews/T001.md、reports/advisor/T001-给Roger的行动建议.md
+  </div>
+  <div>
+    看板由 dashboard agent 生成 &nbsp;|&nbsp; seo-public 版本（仅SEO概览）
+  </div>
+  <div>
+    <span class="isolation-notice">
+      本看板完全独立运行，不连接、不读取、不修改 WordPress 及其数据库
+    </span>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:#4a5568">
+    在浏览器打开：直接双击 dashboard/seo-public/index.html 文件 &nbsp;|&nbsp;
+    或在仓库目录执行：python3 -m http.server 8080，然后访问 http://localhost:8080/dashboard/seo-public/
+  </div>
+</footer>
+
+</div><!-- /#main-content -->
+
+</body>
+</html>
